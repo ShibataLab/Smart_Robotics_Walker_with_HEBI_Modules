@@ -1,19 +1,19 @@
 from bluetooth import*
 import hebi
-import tkinter as tk6
+import tkinter as tk #LIBRARY FOR GUI
 from tkinter import *
 from tkinter import messagebox, ttk
 from time import sleep, time
 import csv
 import os
 import numpy as np
-import threading
+import threading  #library for parallel processing 
 import playsound
 import speech_recognition as sr
 #from threading import Thread
 from PIL import ImageTk, Image
-from gtts import gTTS
-from word2number import w2n 
+from gtts import gTTS #library for text to sound
+from word2number import w2n #library for convering word to number
 
 
 
@@ -25,7 +25,7 @@ ble=1
 
 
 
-root = Tk()  #instance
+root = Tk()  #instance for creating gui
 var =0
 newvar=0
 pre=0
@@ -56,13 +56,13 @@ constant1=0
 
 qw=1
 nn=1
-options = [
+options = [  
             "Velocity Control",
             "Torque Control",
             "Impedance Control"
 
 
-]
+]  #for options in gui 
 
 
 lookup = hebi.Lookup()
@@ -77,8 +77,8 @@ else:
 
 
 
-def bluetooth_esp32():
-	addr = "AC:67:B2:39:10:76"
+def bluetooth_esp32():     #esp32 connection configuration
+	addr = "AC:67:B2:39:10:76" #address for esp32
 
 	service_matches = find_service(address=addr)
 	buf_size = 1024;
@@ -103,7 +103,7 @@ def bluetooth_esp32():
 
 
 
-def input_and_send():
+def input_and_send(): #send data from raspberrypi/comp to ble esp32
 	global ble
 	global data2
 	global fl
@@ -112,8 +112,8 @@ def input_and_send():
 		sock.send(data)
 		sock.send("\n")
 	sleep(2)
-	lett=data2.split(",")
-	lett.pop()
+	lett=data2.split(",") #data sent with cooma so splitting
+	lett.pop() #last element remove
 
 	for item in lett:
 		fl.append(float(item))
@@ -122,7 +122,7 @@ def input_and_send():
 	write_file()
 
 
-def write_file():
+def write_file(): # writing received data to csv file
 	global fl
 	u=-3
 	with open('new98.csv','a',newline='') as f:
@@ -137,11 +137,11 @@ def write_file():
 		u=u+3
 		with open('new98.csv','a',newline='') as f:
 			writer=csv.writer(f)
-			writer.writerow([fl[u]/1000,fl[u+1],fl[u+2]])
+			writer.writerow([fl[u]/1000,fl[u+1],fl[u+2]]) #converting milli seconds to seconds
 
 
 
-def rx_echo():
+def rx_echo():   #receiving data from esp32
     global data2
     global rx
     ##sock.send("\nsend anything\n")
@@ -155,16 +155,16 @@ def rx_echo():
 
 
 
-def check_audio():
+def check_audio():  #for configuring microphone 
 
     r = sr.Recognizer()
-    r.energy_threshold = 6000
+    r.energy_threshold = 6000  #threshold set according to background noise as actuators have some noise
     with sr.Microphone() as source:
 
         try:
             r.adjust_for_ambient_noise(source)
             audio = r.listen(source)
-            said = r.recognize_google(audio)
+            said = r.recognize_google(audio) #using google api
             print(r.energy_threshold)
 
         except:
@@ -173,7 +173,7 @@ def check_audio():
     return said.lower()
 
 
-def speak(text):
+def speak(text): #function to generate sound that is from text to speech where computer as about enter desired speed etc
     global con
     tts = gTTS(text=text, lang="en")
     filename = "voice"+con+".mp3"
@@ -184,7 +184,7 @@ def speak(text):
 
 
 
-def post_impedance():
+def post_impedance(): #before stopping walker or applying brake we decrease effort in steps of 0.03 and 0.01 to avcid jerk
     global eff
     global eff1
     global another
@@ -193,7 +193,7 @@ def post_impedance():
     global xx
     global x
     xx=1
-    if((group_feedback.velocity[1]-x)>=0.5):
+    if((group_feedback.velocity[1]-x)>=0.5):            #tw0 if statements belong to one wheel
         eff=eff-0.02
         group_command.effort =[-1*eff1,eff]
         group_command.position= [np.nan,np.nan]
@@ -217,14 +217,14 @@ def post_impedance():
         group_command.position= [np.nan,np.nan]
         group.send_command(group_command)
 
-    if(group_feedback.velocity[0]>=-0.1 and group_feedback.velocity[1]<0.1):
+    if(group_feedback.velocity[0]>=-0.1 and group_feedback.velocity[1]<0.1): #when this statements satisfy then store the value of position inorder to lock the wheels at that position
         another=group_feedback.position[0]
         another1=group_feedback.position[1]
         xx=0.2
         s1=2
 
 
-def acceleration():
+def acceleration(): #function for acceleration in steps that is step of 0.03 and 2 if statements for one wheel
     global eff
     global eff1
     global x
@@ -239,7 +239,7 @@ def acceleration():
         eff1=eff1+0.01
 
 
-def vel_algo():
+def vel_algo(): #this is with velocity algorithm which is generally not used we are using effort
     global z
     global pre
     global spring_constant
@@ -269,7 +269,7 @@ def vel_algo():
 
 
 
-def vel_post_impedance():
+def vel_post_impedance(): #this is for stopping walker when velocity algo is used instead of effort
     global z
     global pre
     global spring_constant
@@ -302,7 +302,7 @@ def vel_post_impedance():
             xx=0.2
             s1=2
 
-def file_handle():
+def file_handle(): #in this function we are generating a csv file with some output feedback and command parameters from actuators
 	global qw
 	global nn
 	global s1
@@ -337,7 +337,7 @@ def file_handle():
 						s1
 						]
 					writer.writerow(outputdata)
-def velocity_control():
+def velocity_control():  #this is for acceleration in case of velocity command which generally we are not using
     global spring_constant
     group_command.velocity=[-1*spring_constant,spring_constant]
     group_command.position=[np.nan,np.nan]
@@ -347,7 +347,7 @@ def velocity_control():
 
 
 
-def deacceleration():
+def deacceleration(): #this is deacceleration part in case of effort algorithm 
     global eff
     global eff1
     global x
@@ -364,7 +364,7 @@ def deacceleration():
         eff1=eff1-0.01
 
 
-def position_control():
+def position_control(): #this function helps in locking of wheels at last saved position of actuators
     global another
     global another1
     global xx
@@ -374,7 +374,7 @@ def position_control():
     group_command.velocity= [np.nan,np.nan]
     group.send_command(group_command)
 
-def torque_control():
+def torque_control(): #this function is for passing effort parameters to the actuators as calculated in above functions by incrementing
     global eff
     global eff1
     global text
@@ -386,7 +386,7 @@ def torque_control():
 
 
 
-def Setting():
+def Setting(): #this function is used for setting some initial actuator parameters
     #group_command.reference_effort = [0,0]
 
     new_velocity_kp_gains = [0.01, 0.01]
@@ -409,7 +409,7 @@ def Setting():
 
 
 
-def stop_walker():
+def stop_walker(): #this helpos in stopping walker and teriminating some loops
     global s1
     global constant
     global xx
@@ -423,9 +423,9 @@ def stop_walker():
     mm = 0
 
 
-def opertate_walker():
-	global s2
-	global constant
+def opertate_walker(): #a function that use above mentioned functions to operate the walker. used state 5 state positions with s2 and s1
+	global s2 #in order to pass it from all states e-g (not moving, initial movement, acceleration, constant acceleration)
+	global constant # (deacceleration, stop and lock wheels all  these are different state positions)
 	global constant1
 	global s1
 	global m
@@ -467,7 +467,7 @@ def opertate_walker():
 				stop_walker()
 
 
-def clicked():
+def clicked(): #this function for voice speak with speech to text and text to speech functions
 	global constant1
 	global constant
 	global m
@@ -483,7 +483,7 @@ def clicked():
 	con="1"
 	while a==1:
 		y=check_audio()
-		res = [int(i) for i in y.split() if i.isdigit()]
+		res = [int(i) for i in y.split() if i.isdigit()] #this gives us number spoken in a sentence (eg i want  5 mangoes it will return 5)
 
 		if(len(res)==0):
 			try:
@@ -503,8 +503,7 @@ def clicked():
 			c=1
 			rx=1
 			ble=1
-            # # Comment if no insole sensor
-			# bluetooth_esp32()
+			bluetooth_esp32()
 
 		elif len(res)==0 and c==1 and "stop" not in y:
 			speak("Please confirm desired distance again")
@@ -538,11 +537,10 @@ def clicked():
 			new_thread.start()
 			wow_thread = threading.Thread(target=file_handle)
 			wow_thread.start()
-            # # Comment if no insole sensor
-			# one_thread = threading.Thread(target=input_and_send)
-			# two_thread = threading.Thread(target=rx_echo)
-			# one_thread.start()
-			# two_thread.start()
+			one_thread = threading.Thread(target=input_and_send)
+			two_thread = threading.Thread(target=rx_echo)
+			one_thread.start()
+			two_thread.start()
 			y=""
 			ab=4
 
@@ -619,7 +617,7 @@ class MyThread(threading.Thread):  #creating a thread to run multiple functions 
 
             group.get_next_feedback(reuse_fbk=group_feedback)
 
-            if(my_combo.get()=="Torque Control"):
+            if(my_combo.get()=="Torque Control"): #this is effort/torque algorithm ehich we use most of the time
                 #print("mm:torlop")
 
 
@@ -652,7 +650,7 @@ class MyThread(threading.Thread):  #creating a thread to run multiple functions 
                     oldvar=2
 
 
-            elif(my_combo.get()=="Velocity Control"):
+            elif(my_combo.get()=="Velocity Control"): #this we dont use mainly it use velocity control approach
                 if(group_feedback.position[1]<(mm+aa) and s1==0):
                     xx=0
                     if(group_feedback.velocity[1]>0.4):
@@ -717,7 +715,7 @@ def on_entry_click(event):
        e.config(fg = 'black')
 
 
-def on_focusout(event):
+def on_focusout(event): #grey colored in gui text written for marking
     if e.get() == '':
         e.insert(0, 'Speed in (m/s)')
         e.config(fg = 'grey')
