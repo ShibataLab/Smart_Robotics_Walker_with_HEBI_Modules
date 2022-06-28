@@ -1,3 +1,6 @@
+#this code is for two insole sensor and connected with Raspbarry Pi 
+#we can get time, heel and toe csv data from sensor value and we can evaluate swing and stance time, average time, gait speed. 
+
 from bluetooth import*
 import threading
 import csv
